@@ -1,0 +1,36 @@
+{
+  "name": "jsx-autodocs",
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "typings": "/dist/index.d.ts",
+  "author": {
+    "name": "Luigui Delyer @ 2024",
+    "email": "autodocs@s1x.com.br"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/luiguild/jsx-autodocs"
+  },
+  "type": "module",
+  "files": ["dist"],
+  "private": false,
+  "scripts": {
+    "build": "tsc -b",
+    "watch": "tsc --watch",
+    "tsx": "tsx ./src/index.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.10.1",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.1",
+    "@types/ts-expose-internals": "npm:ts-expose-internals@5.4.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "react": "^19.0.0"
+  }
+}
