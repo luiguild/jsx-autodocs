@@ -1,77 +1,159 @@
-# TypeScript Type Tree Generator
+# JSX AutoDocs
 
-This project is a TypeScript Language Server Plugin that generates a tree-like structure representing the type information of TypeScript entities. It recursively traverses the types and builds a comprehensive tree, providing a structured view of the types and their relationships.
+This project is inspired by **Prettify TypeScript**, particularly the TypeScript Type Tree Generator from [**prettify-ts**](https://github.com/mylesmmurphy/prettify-ts).
 
-The plugin handles various TypeScript types including basic types, union types, and complex object types. It also takes care of circular references to prevent infinite recursion. The depth of recursion is configurable, and certain types can be skipped if needed.
-
-This tool is particularly useful for understanding complex type structures in TypeScript projects, aiding in debugging, documentation, and code comprehension.
-
-## Custom Requests through getCompletionsAtPosition
-
-This plugin overrides the `getCompletionsAtPosition` method of the TypeScript Language Server to enable sending custom requests. By hijacking this method, we can intercept the completion request and inject our own logic to generate and return the type tree.
-
-When a completion request is made with the Prettify Metadata flag, instead of providing the usual code completions, the plugin generates a type tree for the entity at the cursor position. This type tree is then included in the completion details that are sent back to the client.
-
-This approach allows us to leverage the existing communication channel between the client and the server, and to provide additional information without requiring changes to the client or the protocol.
-
-## Response TypeInfo
-
-The response from the plugin includes a `TypeInfo` object, which contains detailed type information about a TypeScript node. Here's a breakdown of its structure:
-
+## What this do
+From a simple component like this:
 ```typescript
-type TypeTree = {
-    typeName: string;
-    kind: "union";
-    excessMembers: number;
-    types: TypeTree[];
-} | {
-    typeName: string;
-    kind: "intersection";
-    types: TypeTree[];
-} | {
-    typeName: string;
-    kind: "object";
-    excessProperties: number;
-    properties: {
-        name: string;
-        readonly: boolean;
-        type: TypeTree;
-    }[];
-} | {
-    typeName: string;
-    kind: "array";
-    readonly: boolean;
-    elementType: TypeTree;
-} | {
-    typeName: string;
-    kind: "function";
-    signatures: {
-        returnType: TypeTree;
-        parameters: {
-            name: string;
-            isRestParameter: boolean;
-            type: TypeTree;
-        }[];
-    }[];
-} | {
-    typeName: string;
-    kind: "promise";
-    type: TypeTree;
-} | {
-    typeName: string;
-    kind: "enum";
-    member: string;
-} | {
-    typeName: string;
-    kind: "basic";
+type ExternalType = {
+  requiredProperty: string
+  optionalProperty?: string
 }
 
-/**
- * TypeInfo contains the type information of a TypeScript node.
- */
-type TypeInfo = {
-  typeTree: TypeTree
-  syntaxKind: ts.SyntaxKind
-  name: string
+type MyComponentProps = {
+  requiredString: string
+  requiredNumber: number
+  optionalString?: string
+  optionalNumber?: number
+  requiredArray: ExternalType[]
+  optionalArray?: ExternalType[]
+  requiredObject: ExternalType
+  optionalObject?: ExternalType
+  requiredFunction: () => void
+  optionalFunction?: () => void
+  requiredPromise: () => Promise<any>
+  optionalPromise?: () => Promise<any>
+}
+
+function MyComponent(props: MyComponentProps) {
+  return <div>Hello, jsxAutoDocs</div>
+}
+
+export { MyComponent }
+```
+
+Is generated an object like this:
+```javascript
+{
+  name: 'MyComponent',
+  props: { // These are all the props
+    requiredString: '',
+    requiredNumber: 0,
+    optionalString: '',
+    optionalNumber: 0,
+    requiredArray: [ { requiredProperty: '', optionalProperty: '' } ],
+    optionalArray: [ { requiredProperty: '', optionalProperty: '' } ],
+    requiredObject: { requiredProperty: '', optionalProperty: '' },
+    optionalObject: { requiredProperty: '', optionalProperty: '' },
+    requiredFunction: '() => {}',
+    optionalFunction: '() => {}',
+    requiredPromise: '() => {}',
+    optionalPromise: '() => {}'
+  },
+  required: { // These are only the required props
+    requiredString: '',
+    requiredNumber: 0,
+    requiredArray: [ { requiredProperty: '' } ],
+    requiredObject: { requiredProperty: '' },
+    requiredFunction: '() => {}',
+    requiredPromise: '() => {}'
+  }
 }
 ```
+
+And this object is turned into this one:
+```javascript
+{
+  component: 'MyComponent',
+  minimal: '<MyComponent\n' +
+    '  requiredString=""\n' +
+    '  requiredNumber={0}\n' +
+    '  requiredArray={[{\n' +
+    '      requiredProperty: ""\n' +
+    '    }]}\n' +
+    '  requiredObject={\n' +
+    '    requiredProperty: ""\n' +
+    '  }\n' +
+    '  requiredFunction={() => {}}\n' +
+    '  requiredPromise={() => {}}\n' +
+    '/>',
+  complete: '<MyComponent\n' +
+    '  requiredString=""\n' +
+    '  requiredNumber={0}\n' +
+    '  optionalString=""\n' +
+    '  optionalNumber={0}\n' +
+    '  requiredArray={[{\n' +
+    '      requiredProperty: "",\n' +
+    '      optionalProperty: ""\n' +
+    '    }]}\n' +
+    '  optionalArray={[{\n' +
+    '      requiredProperty: "",\n' +
+    '      optionalProperty: ""\n' +
+    '    }]}\n' +
+    '  requiredObject={\n' +
+    '    requiredProperty: "",\n' +
+    '    optionalProperty: ""\n' +
+    '  }\n' +
+    '  optionalObject={\n' +
+    '    requiredProperty: "",\n' +
+    '    optionalProperty: ""\n' +
+    '  }\n' +
+    '  requiredFunction={() => {}}\n' +
+    '  optionalFunction={() => {}}\n' +
+    '  requiredPromise={() => {}}\n' +
+    '  optionalPromise={() => {}}\n' +
+    '/>'
+}
+```
+
+And then you can just represent your component in your docs with a valid JSX signature like this:
+
+### Minimal
+(only required props)
+```jsx
+<MyComponent
+  requiredString=""
+  requiredNumber={0}
+  requiredArray={[{
+      requiredProperty: ""
+    }]}
+  requiredObject={
+    requiredProperty: ""
+  }
+  requiredFunction={() => {}}
+  requiredPromise={() => {}}
+/>
+```
+
+### Complete
+(all props)
+```jsx
+<MyComponent
+  requiredString=""
+  requiredNumber={0}
+  optionalString=""
+  optionalNumber={0}
+  requiredArray={[{
+      requiredProperty: "",
+      optionalProperty: ""
+    }]}
+  optionalArray={[{
+      requiredProperty: "",
+      optionalProperty: ""
+    }]}
+  requiredObject={
+    requiredProperty: "",
+    optionalProperty: ""
+  }
+  optionalObject={
+    requiredProperty: "",
+    optionalProperty: ""
+  }
+  requiredFunction={() => {}}
+  optionalFunction={() => {}}
+  requiredPromise={() => {}}
+  optionalPromise={() => {}}
+/>
+```
+
+Enjoy and make beautiful automated docs from your components 😊

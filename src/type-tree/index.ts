@@ -14,6 +14,7 @@ const defaultOptions: JSXAutoDocsOptions = {
   maxSubProperties: 100,
   maxUnionMembers: 100,
 }
+
 const primitiveTypesOrder = ['string', 'number', 'bigint', 'boolean', 'symbol']
 const falsyTypesOrder = ['null', 'undefined']
 const primitiveTypeOrderMap = new Map<string, number>(
@@ -22,6 +23,7 @@ const primitiveTypeOrderMap = new Map<string, number>(
 const falsyTypeOrderMap = new Map<string, number>(
   falsyTypesOrder.map((type, index) => [type, index]),
 )
+
 const PRIMITIVE_TYPE_FLAGS =
   ts.TypeFlags.String |
   ts.TypeFlags.StringLiteral |
@@ -40,8 +42,8 @@ const PRIMITIVE_TYPE_FLAGS =
   ts.TypeFlags.Never |
   ts.TypeFlags.Unknown |
   ts.TypeFlags.Any
+
 const typeNameCache = new WeakMap<ts.Type, string>()
-const sortedUnionCache = new WeakMap<ts.Type, TypeTree[]>()
 
 export function getTypeInfoAtPosition(
   typescriptContext: typeof ts,
@@ -92,7 +94,7 @@ export function getTypeInfoAtPosition(
     const typeTree = getTypeTree(
       type,
       0,
-      new Set<ts.Type>(),
+      new Set<string>(),
       typeChecker,
       typescriptContext,
       options,
@@ -113,25 +115,42 @@ export function getTypeInfoAtPosition(
 function getTypeTree(
   type: ts.Type,
   depth: number,
-  visited: Set<ts.Type>,
+  visited: Set<string>,
   checker: ts.TypeChecker,
   typescript: typeof ts,
   options: JSXAutoDocsOptions,
-  context: { propertiesCount: number },
+  context: { propertiesCount: number; propertyName?: string; kind?: string },
 ): TypeTree {
-  const goingDeep = (type: ts.Type): TypeTree => {
-    return getTypeTree(
-      type,
-      depth + 1,
-      visited,
-      checker,
-      typescript,
-      options,
-      context,
-    )
+  const goingDeep = (
+    type: ts.Type,
+    propertyName?: string,
+    contextKind?: string,
+  ): TypeTree => {
+    const cacheKey = `${checker.typeToString(type)}:${propertyName || 'default'}:${contextKind || 'default'}`
+
+    if (visited.has(cacheKey)) {
+      return { kind: 'basic', typeName: checker.typeToString(type) }
+    }
+
+    return getTypeTree(type, depth + 1, visited, checker, typescript, options, {
+      ...context,
+      propertyName,
+      kind: contextKind,
+    })
   }
 
   try {
+    const propertyName = context.propertyName || 'default'
+    const contextKind = context.kind || 'default'
+    const cacheKey = `${checker.typeToString(type)}:${propertyName}:${contextKind}`
+
+    if (visited.has(cacheKey)) {
+      console.log(`Cache hit: ${cacheKey}`)
+      return { kind: 'basic', typeName: checker.typeToString(type) }
+    }
+
+    visited.add(cacheKey)
+
     let typeName = typeNameCache.get(type)
 
     if (!typeName) {
@@ -152,33 +171,11 @@ function getTypeTree(
       }
     }
 
-    if (visited.has(type)) {
-      return {
-        kind: 'basic',
-        typeName,
-      }
-    }
-
-    visited.add(type)
-
     if (type.isUnion()) {
-      let sortedTypes = sortedUnionCache.get(type)
-
-      if (!sortedTypes) {
-        sortedTypes = []
-        const limitedTypes =
-          type.types.length > options.maxUnionMembers
-            ? type.types.slice(0, options.maxUnionMembers)
-            : type.types
-
-        limitedTypes.sort((a, b) => sortUnionTypes(a, b))
-
-        for (let i = 0; i < limitedTypes.length; i++) {
-          sortedTypes.push(goingDeep(limitedTypes[i]!))
-        }
-
-        sortedUnionCache.set(type, sortedTypes)
-      }
+      const sortedTypes = type.types
+        .slice(0, options.maxUnionMembers)
+        .sort(sortUnionTypes)
+        .map((t) => goingDeep(t, propertyName, 'union'))
 
       return {
         kind: 'union',
@@ -187,25 +184,39 @@ function getTypeTree(
       }
     }
 
-    if (type.symbol?.flags & ts.SymbolFlags.EnumMember && type.symbol.parent) {
-      return {
-        kind: 'enum',
-        typeName,
-        member: `${type.symbol.parent.name}.${type.symbol.name}`,
-      }
-    }
-
     if (type.isIntersection()) {
-      const intersectionTypes: TypeTree[] = []
-
-      for (let i = 0; i < type.types.length; i++) {
-        intersectionTypes.push(goingDeep(type.types[i]!))
-      }
+      const intersectionTypes = type.types.map((t) =>
+        goingDeep(t, propertyName, 'intersection'),
+      )
 
       return {
         kind: 'intersection',
         typeName,
         types: intersectionTypes,
+      }
+    }
+
+    if (checker.isArrayType(type)) {
+      const arrayType = checker.getTypeArguments(type as ts.TypeReference)[0]
+
+      if (!arrayType) {
+        return {
+          kind: 'array',
+          typeName,
+          elementType: { kind: 'basic', typeName: 'any' },
+        }
+      }
+
+      const expandedElementType = goingDeep(
+        arrayType,
+        `${propertyName}-element`,
+        'array',
+      )
+
+      return {
+        kind: 'array',
+        typeName,
+        elementType: expandedElementType,
       }
     }
 
@@ -217,7 +228,7 @@ function getTypeTree(
         kind: 'promise',
         typeName,
         type: typeArgument
-          ? goingDeep(typeArgument)
+          ? goingDeep(typeArgument, `${propertyName}-promise`, 'promise')
           : { kind: 'basic', typeName: 'void' },
       }
     }
@@ -235,6 +246,8 @@ function getTypeTree(
 
         const returnType = goingDeep(
           checker.getReturnTypeOfSignature(signature),
+          'returnType',
+          'function',
         )
 
         const parameters: { name: string; type: TypeTree }[] = []
@@ -251,7 +264,7 @@ function getTypeTree(
 
           parameters.push({
             name: paramName,
-            type: goingDeep(paramType),
+            type: goingDeep(paramType, paramName, 'parameter'),
           })
         }
 
@@ -262,19 +275,6 @@ function getTypeTree(
         kind: 'function',
         typeName,
         signatures,
-      }
-    }
-
-    if (checker.isArrayType(type)) {
-      const arrayType = checker.getTypeArguments(type as ts.TypeReference)[0]
-      const elementType: TypeTree = arrayType
-        ? goingDeep(arrayType)
-        : { kind: 'basic', typeName: 'any' }
-
-      return {
-        kind: 'array',
-        typeName,
-        elementType,
       }
     }
 
@@ -309,7 +309,7 @@ function getTypeTree(
 
         properties.push({
           name: propName,
-          type: goingDeep(symbolType),
+          type: goingDeep(symbolType, propName, 'object'),
         })
       }
 
@@ -317,7 +317,11 @@ function getTypeTree(
       if (stringIndexType) {
         properties.push({
           name: '[key: string]',
-          type: goingDeep(stringIndexType),
+          type: goingDeep(
+            stringIndexType,
+            `${propertyName}-stringIndex`,
+            'object',
+          ),
         })
 
         context.propertiesCount++
@@ -327,7 +331,11 @@ function getTypeTree(
       if (numberIndexType) {
         properties.push({
           name: '[key: number]',
-          type: goingDeep(numberIndexType),
+          type: goingDeep(
+            numberIndexType,
+            `${propertyName}-numberIndex`,
+            'object',
+          ),
         })
 
         context.propertiesCount++
@@ -340,10 +348,7 @@ function getTypeTree(
       }
     }
 
-    return {
-      kind: 'basic',
-      typeName,
-    }
+    return { kind: 'basic', typeName }
   } catch {
     return { kind: 'basic', typeName: 'unknown' }
   }

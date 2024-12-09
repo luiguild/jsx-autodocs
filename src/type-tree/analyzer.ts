@@ -63,7 +63,6 @@ export async function analyzeFunctionType(
   for (const expSym of exportsSymbols) {
     let originalSymbol = expSym
 
-    // Resolve alias, se necessário
     if (expSym.flags & ts.SymbolFlags.Alias) {
       originalSymbol = checker.getAliasedSymbol(expSym)
     }
@@ -82,7 +81,7 @@ export async function analyzeFunctionType(
   }
 
   if (!exportedFunctionNode) {
-    throw new Error('Nenhuma função exportada encontrada no arquivo.')
+    return output
   }
 
   let position: number
@@ -102,7 +101,6 @@ export async function analyzeFunctionType(
   }
 
   const typeInfo = getTypeInfoAtPosition(ts, checker, sourceFile, position)
-
   const transformedTypeInfo = typeTreeTransformer(typeInfo)
 
   return transformedTypeInfo

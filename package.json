@@ -16,7 +16,7 @@
   "files": ["dist"],
   "private": false,
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && cp ./README.md ./dist/README.md",
     "watch": "tsc --watch",
     "tsx": "tsx ./src/index.ts"
   },
@@ -29,8 +29,5 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
-  },
-  "dependencies": {
-    "react": "^19.0.0"
   }
 }
