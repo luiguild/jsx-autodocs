@@ -29,6 +29,13 @@ export type JSXAutoDocsResult = {
   complete: string
 }
 
+export type JSXAutoDocsVite = {
+  include: string
+  exclude: string
+  importPackageName: string
+  indentLevel: number
+}
+
 export type TypeTree = { typeName: string } & (
   | { kind: 'union'; types: TypeTree[] }
   | { kind: 'intersection'; types: TypeTree[] }

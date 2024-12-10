@@ -193,7 +193,6 @@ export async function generateDocs(
 
   const packageName = await getPackageName(importPackageName)
   const component = await analyzeComponent(path)
-
   const jsxObject = generateJSX(component, packageName, indentLevel)
 
   return jsxObject

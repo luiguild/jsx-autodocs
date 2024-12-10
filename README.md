@@ -192,5 +192,32 @@ import { getTypeInfoAtPosition } from 'jsx-autodocs'
 const deepTypeAnaliysis = getTypeInfoAtPosition(typescriptContext, typeChecker, sourceFile, position, options)
 ```
 
+### Vite Plugin
+Example using it in Storybook
+```typescript
+import { jsxAutoDocsVite } from 'jsx-autodocs'
+
+const config: StorybookConfig = {
+  // your Storybook config
+  viteFinal: async (config) => {
+    config.plugins?.push(
+      jsxAutoDocsVite({
+        include: '**/*.tsx',
+        exclude: '**/*.stories.tsx',
+        importPackageName: 'my-ui-library',
+        indentLevel: 2
+      })
+    )
+    return config
+  }
+}
+```
+
+And then in your docs page you can retrieve the information easily
+```typescript
+import { findJSXAutoDocs } from 'jsx-autodocs'
+
+const jsx = findJSXAutoDocs('MyComponent')
+```
 
 Enjoy and make beautiful automated docs from your components 😊

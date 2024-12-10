@@ -1,6 +1,6 @@
 {
   "name": "jsx-autodocs",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "main": "./dist/index.js",
   "typings": "/dist/index.d.ts",
   "author": {
@@ -31,5 +31,8 @@
   },
   "peerDependencies": {
     "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@rollup/pluginutils": "^5.1.3"
   }
 }
