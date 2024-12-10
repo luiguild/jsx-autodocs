@@ -1,7 +1,22 @@
 import { normalize, resolve } from 'node:path'
-import { createFilter } from '@rollup/pluginutils'
 import { generateDocs } from './generate.js'
 import type { JSXAutoDocsVite } from './type-tree/types.js'
+
+function filter(
+  id: string,
+  include: RegExp | string | undefined,
+  exclude: RegExp | string | undefined,
+): boolean {
+  if (exclude && new RegExp(exclude).test(id)) {
+    return false
+  }
+
+  if (include && new RegExp(include).test(id)) {
+    return true
+  }
+
+  return true
+}
 
 /**
  * Generates documentation for components in a Vite project.
@@ -28,15 +43,12 @@ export function jsxAutoDocsVite({
   importPackageName,
   indentLevel = 2,
 }: JSXAutoDocsVite) {
-  const filter = createFilter(
-    include || '**/*.tsx',
-    exclude || '**/*.stories.tsx',
-  )
-
   return {
     name: 'jsx-autodocs',
     async transform(source: string, id: string) {
-      if (!filter(id)) return null
+      if (!filter(id, include || '**/*.tsx', exclude || '**/*.stories.tsx')) {
+        return null
+      }
 
       const absolutePath = normalize(resolve(id))
 
