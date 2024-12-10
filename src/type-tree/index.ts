@@ -45,6 +45,24 @@ const PRIMITIVE_TYPE_FLAGS =
 
 const typeNameCache = new WeakMap<ts.Type, string>()
 
+/**
+ * Retrieves detailed type information for the symbol at a specific position in a TypeScript source file.
+ *
+ * This function analyzes the position within the source file, retrieves the symbol at that position,
+ * and generates a type tree representation of the symbol's type. It will use the declared type if applicable.
+ *
+ * @param {typeof ts} typescriptContext - The TypeScript context, typically `ts` from the TypeScript module.
+ * @param {ts.TypeChecker} typeChecker - The TypeScript type checker used to resolve type information for symbols.
+ * @param {ts.SourceFile} sourceFile - The source file being analyzed.
+ * @param {number} position - The position (character offset) within the source file to analyze.
+ * @param {JSXAutoDocsOptions} [options] - Optional settings for customizing the documentation generation.
+ *
+ * @returns {TypeInfo | undefined} A structured representation of the type at the specified position, or `undefined` if no valid type is found.
+ *
+ * @throws {Error} If an error occurs during the process of analyzing the type information.
+ *
+ * @async
+ */
 export function getTypeInfoAtPosition(
   typescriptContext: typeof ts,
   typeChecker: ts.TypeChecker,

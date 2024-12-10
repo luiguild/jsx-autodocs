@@ -1,4 +1,4 @@
-import { analyzeFunctionType } from './type-tree/analyzer.js'
+import { analyzeComponent } from './type-tree/analyzer.js'
 import type {
   ComponentDescriptor,
   JSXAutoDocsResult,
@@ -65,7 +65,7 @@ const serializeJSXValue = (
   return `{${JSON.stringify(value)}}`
 }
 
-const generateJSX = (
+export const generateJSX = (
   component: ComponentDescriptor,
   indentLevel: number = 2,
 ): {
@@ -115,7 +115,24 @@ const generateJSX = (
   }
 }
 
-export async function generateDocs(path: string): Promise<JSXAutoDocsResult> {
+/**
+ * Generates documentation for a single TSX component.
+ *
+ * This function reads the TSX component file at the provided path and generates
+ * the associated documentation, with indentation configured according to the
+ * specified level.
+ *
+ * @param {string} path - The path to the TSX component file.
+ * @param {number} [indentLevel=2] - The indentation level for the generated documentation. The default value is 2.
+ *
+ * @returns {Promise<JSXAutoDocsResult>} A Promise that resolves with the generated documentation for the component.
+ *
+ * @async
+ */
+export async function generateDocs(
+  path: string,
+  indentLevel: number = 2,
+): Promise<JSXAutoDocsResult> {
   if (!path) {
     return {
       component: '',
@@ -124,8 +141,8 @@ export async function generateDocs(path: string): Promise<JSXAutoDocsResult> {
     }
   }
 
-  const component = await analyzeFunctionType(path)
-  const jsx = generateJSX(component)
+  const component = await analyzeComponent(path)
+  const jsxObject = generateJSX(component, indentLevel)
 
-  return jsx
+  return jsxObject
 }

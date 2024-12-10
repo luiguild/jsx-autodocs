@@ -156,4 +156,32 @@ And then you can just represent your component in your docs with a valid JSX sig
 />
 ```
 
+## How to use it
+```shell
+npm i -sD jsx-autodocs
+```
+
+### Exposed methods
+To generate both the minimal and complete **JSX** versions of your component’s documentation, use the **generateDocs** method.
+```typescript
+import { generateDocs } from 'jsx-autodocs'
+
+const jsx = await generateDocs('./src/components/MyComponent.tsx', 2)
+```
+
+If you only want to get the descriptor object of your component, use the **analyzeComponent** method.
+```typescript
+import { analyzeComponent } from 'jsx-autodocs'
+
+const componentDescriptor = await analyzeComponent('./src/components/MyComponent.tsx')
+```
+
+If you already have the necessary information from the file and need a deep type analysis, simply invoke the method **getTypeInfoAtPosition**.
+```typescript
+import { getTypeInfoAtPosition } from 'jsx-autodocs'
+
+const deepTypeAnaliysis = getTypeInfoAtPosition(typescriptContext, typeChecker, sourceFile, position, options)
+```
+
+
 Enjoy and make beautiful automated docs from your components 😊

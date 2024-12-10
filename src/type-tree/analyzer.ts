@@ -4,7 +4,19 @@ import { getTypeInfoAtPosition } from './index.js'
 import { typeTreeTransformer } from './transformer.js'
 import type { ComponentDescriptor } from './types.js'
 
-export async function analyzeFunctionType(
+/**
+ * Analyzes a TSX component and returns its descriptor object.
+ *
+ * This function takes the path to a TSX component file, analyzes its structure,
+ * and returns a descriptor object representing the component's properties and types.
+ *
+ * @param {string} filePath - The path to the TSX component file to analyze.
+ *
+ * @returns {Promise<ComponentDescriptor>} A Promise that resolves with the component's descriptor object.
+ *
+ * @async
+ */
+export async function analyzeComponent(
   filePath: string,
 ): Promise<ComponentDescriptor> {
   const output: ComponentDescriptor = {
