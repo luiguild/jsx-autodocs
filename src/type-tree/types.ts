@@ -17,11 +17,13 @@ export type TypeFunctionSignature = {
 
 export type ComponentDescriptor = {
   name: string
+  exportType?: 'default' | 'named'
   props: Record<string, unknown>
   required: Record<string, unknown>
 }
 
 export type JSXAutoDocsResult = {
+  import: string
   component: string
   minimal: string
   complete: string

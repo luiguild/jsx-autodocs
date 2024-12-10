@@ -36,6 +36,7 @@ Is generated an object like this:
 ```javascript
 {
   name: 'MyComponent',
+  exportType: 'named', // or default
   props: { // These are all the props
     requiredString: '',
     requiredNumber: 0,
@@ -65,6 +66,7 @@ And this object is turned into this one:
 ```javascript
 {
   component: 'MyComponent',
+  import: "import { MyComponent } from 'jsx-autodocs'",
   minimal: '<MyComponent\n' +
     '  requiredString=""\n' +
     '  requiredNumber={0}\n' +
@@ -174,6 +176,13 @@ If you only want to get the descriptor object of your component, use the **analy
 import { analyzeComponent } from 'jsx-autodocs'
 
 const componentDescriptor = await analyzeComponent('./src/components/MyComponent.tsx')
+```
+
+If for any reason you already have the component descriptor or have built it yourself, you can use the **generateJSX** method.
+```typescript
+import { generateJSX } from 'jsx-autodocs'
+
+const jsx = generateJSX(component, importPackageName, indentLevel)
 ```
 
 If you already have the necessary information from the file and need a deep type analysis, simply invoke the method **getTypeInfoAtPosition**.

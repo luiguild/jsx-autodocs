@@ -3,6 +3,7 @@ import type { ComponentDescriptor, TypeInfo, TypeTree } from './types.js'
 export function typeTreeTransformer(input?: TypeInfo): ComponentDescriptor {
   const output: ComponentDescriptor = {
     name: '',
+    exportType: undefined,
     props: {},
     required: {},
   }

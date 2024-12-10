@@ -1,6 +1,6 @@
 {
   "name": "jsx-autodocs",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "main": "./dist/index.js",
   "typings": "/dist/index.d.ts",
   "author": {
@@ -18,7 +18,7 @@
   "scripts": {
     "build": "tsc -b && cp ./README.md ./dist/README.md",
     "watch": "tsc --watch",
-    "tsx": "tsx ./src/index.ts"
+    "tsx": "tsx ./examples/run.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

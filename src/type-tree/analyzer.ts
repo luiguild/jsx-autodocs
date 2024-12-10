@@ -1,5 +1,5 @@
 import { promises as fs } from 'node:fs'
-import ts from 'typescript'
+import ts, { type __String } from 'typescript'
 import { getTypeInfoAtPosition } from './index.js'
 import { typeTreeTransformer } from './transformer.js'
 import type { ComponentDescriptor } from './types.js'
@@ -21,6 +21,7 @@ export async function analyzeComponent(
 ): Promise<ComponentDescriptor> {
   const output: ComponentDescriptor = {
     name: '',
+    exportType: undefined,
     props: {},
     required: {},
   }
@@ -114,6 +115,22 @@ export async function analyzeComponent(
 
   const typeInfo = getTypeInfoAtPosition(ts, checker, sourceFile, position)
   const transformedTypeInfo = typeTreeTransformer(typeInfo)
+
+  if (exportedFunctionNode) {
+    const symbol = checker.getSymbolAtLocation(
+      exportedFunctionNode.name || exportedFunctionNode,
+    )
+
+    if (!symbol) {
+      return output
+    }
+
+    if (sourceSymbol.exports?.has(symbol.escapedName as __String)) {
+      transformedTypeInfo.exportType = 'named'
+    } else {
+      transformedTypeInfo.exportType = 'default'
+    }
+  }
 
   return transformedTypeInfo
 }
