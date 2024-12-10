@@ -130,6 +130,8 @@ export function getTypeInfoAtPosition(
   }
 }
 
+const excludedProps = new Set(['children'])
+
 function getTypeTree(
   type: ts.Type,
   depth: number,
@@ -163,7 +165,6 @@ function getTypeTree(
     const cacheKey = `${checker.typeToString(type)}:${propertyName}:${contextKind}`
 
     if (visited.has(cacheKey)) {
-      console.log(`Cache hit: ${cacheKey}`)
       return { kind: 'basic', typeName: checker.typeToString(type) }
     }
 
@@ -322,8 +323,14 @@ function getTypeTree(
 
       for (let i = 0; i < publicProperties.length; i++) {
         const symbol = publicProperties[i]!
-        const symbolType = checker.getTypeOfSymbol(symbol)
         const propName = symbol.getName()
+
+        if (excludedProps.has(propName)) {
+          context.propertiesCount--
+          continue
+        }
+
+        const symbolType = checker.getTypeOfSymbol(symbol)
 
         properties.push({
           name: propName,

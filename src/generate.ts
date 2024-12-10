@@ -38,6 +38,14 @@ const serializeJSXValue = (
   }
 
   if (Array.isArray(value)) {
+    if (
+      value.length === 1 &&
+      typeof value[0] === 'object' &&
+      Object.keys(value[0]).length === 0
+    ) {
+      return isInsideObject ? '[]' : '{[]}'
+    }
+
     const items = value
       .map((item) => serializeJSXValue(item, indentLevel, nextIndent, true))
       .join(', ')
@@ -58,6 +66,7 @@ const serializeJSXValue = (
           )}`,
       )
       .join(',\n')
+
     return `{\n${entries}\n${currentIndent}}`
   }
 
