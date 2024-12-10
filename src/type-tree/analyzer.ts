@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs'
 import ts, { type __String } from 'typescript'
-import { getTypeInfoAtPosition } from './index.js'
+import { getTypeInfoAtPosition } from './getTypes.js'
 import { typeTreeTransformer } from './transformer.js'
 import type { ComponentDescriptor } from './types.js'
 

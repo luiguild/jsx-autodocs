@@ -1,6 +1,6 @@
 import { normalize, resolve } from 'node:path'
 import { createFilter } from '@rollup/pluginutils'
-import { generateDocs } from './index.js'
+import { generateDocs } from './generate.js'
 import type { JSXAutoDocsResult, JSXAutoDocsVite } from './type-tree/types.js'
 
 const getJSXAutoDocsFromWindow = (): Set<JSXAutoDocsResult> | undefined =>
