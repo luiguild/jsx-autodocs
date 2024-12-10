@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs'
 import ts, { type __String } from 'typescript'
+import type { ComponentDescriptor } from '../types.js'
 import { getTypeInfoAtPosition } from './getTypes.js'
 import { typeTreeTransformer } from './transformer.js'
-import type { ComponentDescriptor } from './types.js'
 
 /**
  * Analyzes a TSX component and returns its descriptor object.

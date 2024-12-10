@@ -1,10 +1,7 @@
 import { promises as fs } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { analyzeComponent } from './type-tree/analyzer.js'
-import type {
-  ComponentDescriptor,
-  JSXAutoDocsResult,
-} from './type-tree/types.js'
+import type { ComponentDescriptor, JSXAutoDocsResult } from './types.js'
 
 const isDynamicKey = (key: string): boolean => /^\[.*\]$/.test(key)
 

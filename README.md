@@ -202,8 +202,6 @@ const config: StorybookConfig = {
   viteFinal: async (config) => {
     config.plugins?.push(
       jsxAutoDocsVite({
-        include: '**/*.tsx',
-        exclude: '**/*.stories.tsx',
         importPackageName: 'my-ui-library',
         indentLevel: 2
       })

@@ -1,15 +1,6 @@
 import { normalize, resolve } from 'node:path'
 import { generateDocs } from './generate.js'
-import type { JSXAutoDocsVite } from './type-tree/types.js'
-
-function globToRegex(glob: string): RegExp {
-  const escapedGlob = glob
-    .replace(/\./g, '\\.')
-    .replace(/\*\*/g, '.*')
-    .replace(/\*/g, '[^/]*')
-
-  return new RegExp(`^${escapedGlob}$`)
-}
+import type { JSXAutoDocsVite } from './types.js'
 
 /**
  * Generates documentation for components in a Vite project.
@@ -23,29 +14,33 @@ function globToRegex(glob: string): RegExp {
  * accessible globally via `window.__jsxAutoDocs`.
  *
  * @param {JSXAutoDocsVite} options - Configuration options for generating the documentation.
- * @param {string} options.include - A glob pattern or string to include files for documentation generation.
- * @param {string} options.exclude - A glob pattern or string to exclude files from documentation generation.
  * @param {string} options.importPackageName - The name of the package used for imports in the documentation.
  * @param {number} [options.indentLevel=2] - The indentation level for the generated documentation. Default is 2.
  *
  * @returns {void} This function does not return a value; it modifies the global `window.__jsxAutoDocs` Set as a side effect.
  */
 export function jsxAutoDocsVite({
-  include,
-  exclude,
   importPackageName,
   indentLevel = 2,
 }: JSXAutoDocsVite) {
-  const includeRegex = globToRegex(include || '**/*.tsx')
-  const excludeRegex = globToRegex(exclude || '**/*.stories.tsx')
-
   return {
     name: 'jsx-autodocs',
     async transform(source: string, id: string) {
-      if (excludeRegex.test(id)) return null
-      if (!includeRegex.test(id)) return null
+      const cleanPath = id
+        ?.split('?')?.[0]
+        ?.split('#')?.[0]
+        ?.replace(/\\/g, '/')
+        .toLowerCase()
 
-      const absolutePath = normalize(resolve(id))
+      if (cleanPath?.endsWith('.stories.tsx')) {
+        return null
+      }
+
+      if (!cleanPath?.endsWith('.tsx')) {
+        return null
+      }
+
+      const absolutePath = normalize(resolve(cleanPath))
 
       try {
         const docs = await generateDocs(
@@ -56,8 +51,8 @@ export function jsxAutoDocsVite({
 
         const injectedCode = `
 if (typeof window !== 'undefined') {
-    window.__jsxAutoDocs = window.__jsxAutoDocs || new Set();
-    window.__jsxAutoDocs.add(${docs});
+  window.__jsxAutoDocs = window.__jsxAutoDocs || new Set();
+  window.__jsxAutoDocs.add(${JSON.stringify(docs)});
 }`
 
         return {
@@ -66,7 +61,7 @@ if (typeof window !== 'undefined') {
         }
       } catch (error) {
         console.warn(
-          'Failed to inject documentation into window.__jsxAutoDocs:',
+          '[JSXAutoDocs] Failed injecting docs in window.__jsxAutoDocs:',
           error,
         )
 

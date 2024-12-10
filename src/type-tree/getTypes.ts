@@ -1,12 +1,12 @@
 import ts from 'typescript'
-import { getDescendantAtRange } from './get-ast-node.js'
 import type {
   JSXAutoDocsOptions,
   TypeFunctionSignature,
   TypeInfo,
   TypeProperty,
   TypeTree,
-} from './types.js'
+} from '../types.js'
+import { getDescendantAtRange } from './get-ast-node.js'
 
 const defaultOptions: JSXAutoDocsOptions = {
   maxDepth: 100,

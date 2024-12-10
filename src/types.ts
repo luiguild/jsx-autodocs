@@ -30,10 +30,8 @@ export type JSXAutoDocsResult = {
 }
 
 export type JSXAutoDocsVite = {
-  include: string
-  exclude: string
   importPackageName: string
-  indentLevel: number
+  indentLevel?: number
 }
 
 export type TypeTree = { typeName: string } & (
