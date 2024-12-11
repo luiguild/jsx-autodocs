@@ -27,10 +27,6 @@ export function jsxAutoDocsVite({
   return {
     name: 'jsx-autodocs',
     async transform(source: string, id: string) {
-      if (debug) {
-        console.info('[JSXAutoDocs] Starting to generate documentation.')
-      }
-
       const cleanPath = id
         ?.split('?')?.[0]
         ?.split('#')?.[0]
@@ -65,12 +61,6 @@ if (typeof window !== 'undefined') {
   window.__jsxAutoDocs = window.__jsxAutoDocs || new Set();
   window.__jsxAutoDocs.add(${JSON.stringify(docs)});
 }`
-
-        if (debug) {
-          console.info(
-            '[JSXAutoDocs] Documentation generated and injected successfully.',
-          )
-        }
 
         return {
           code: `${source}\n${injectedCode}`,
