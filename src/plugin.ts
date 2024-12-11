@@ -22,10 +22,15 @@ import type { JSXAutoDocsVite } from './types.js'
 export function jsxAutoDocsVite({
   importPackageName,
   indentLevel = 2,
+  debug = false,
 }: JSXAutoDocsVite) {
   return {
     name: 'jsx-autodocs',
     async transform(source: string, id: string) {
+      if (debug) {
+        console.info('[JSXAutoDocs] Starting to generate documentation.')
+      }
+
       const cleanPath = id
         ?.split('?')?.[0]
         ?.split('#')?.[0]
@@ -43,6 +48,12 @@ export function jsxAutoDocsVite({
       const absolutePath = normalize(resolve(cleanPath))
 
       try {
+        if (debug) {
+          console.info(
+            `[JSXAutoDocs] Generating documentation for the file: ${absolutePath}`,
+          )
+        }
+
         const docs = await generateDocs(
           absolutePath,
           importPackageName,
@@ -54,6 +65,12 @@ if (typeof window !== 'undefined') {
   window.__jsxAutoDocs = window.__jsxAutoDocs || new Set();
   window.__jsxAutoDocs.add(${JSON.stringify(docs)});
 }`
+
+        if (debug) {
+          console.info(
+            '[JSXAutoDocs] Documentation generated and injected successfully.',
+          )
+        }
 
         return {
           code: `${source}\n${injectedCode}`,

@@ -32,6 +32,7 @@ export type JSXAutoDocsResult = {
 export type JSXAutoDocsVite = {
   importPackageName: string
   indentLevel?: number
+  debug: boolean
 }
 
 export type TypeTree = { typeName: string } & (
