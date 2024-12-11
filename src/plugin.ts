@@ -7,11 +7,11 @@ import type { JSXAutoDocsVite, JSXAutoDocsViteFileCache } from './types.js'
 /**
  * Generates documentation for components in a Vite project.
  *
- * This function processes components based on the specified include and exclude
- * patterns, generating JSX documentation for each matching component. It allows
- * configuration of the package name for imports, the indentation level for
- * the generated documentation, the size of the cache to store processed files,
- * and the activation of debug logs.
+ * This function processes components based on the specified configuration options,
+ * generating JSX documentation for each matching component. It allows customization
+ * of the package name used for imports, the indentation level of the generated
+ * documentation, the cache size for storing processed file information, and debug logs.
+ * Additional options can be specified to control the depth and scope of the documentation.
  *
  * The generated JSX documentation is stored in a `Set` as a side effect,
  * accessible globally via `window.__jsxAutoDocs`.
@@ -19,8 +19,12 @@ import type { JSXAutoDocsVite, JSXAutoDocsViteFileCache } from './types.js'
  * @param {JSXAutoDocsVite} options - Configuration options for generating the documentation.
  * @param {string} options.importPackageName - The name of the package used for imports in the documentation.
  * @param {number} [options.indentLevel=2] - The indentation level for the generated documentation. Default is 2.
- * @param {number} [options.cacheSize=1000] - The maximum size of the cache to store processed file information.
- * @param {boolean} [options.debug=false] - Enables debug logs if set to true.
+ * @param {number} [options.cacheSize=1000] - The maximum size of the cache to store processed file information. Default is 1000.
+ * @param {boolean} [options.debug=false] - Enables debug logs if set to true. Default is false.
+ * @param {number} [options.maxDepth=100] - The maximum depth for nested components or structures in the documentation. Default is 100.
+ * @param {number} [options.maxProperties=100] - The maximum number of properties to include in the generated documentation. Default is 100.
+ * @param {number} [options.maxSubProperties=100] - The maximum number of sub-properties to include for nested objects. Default is 100.
+ * @param {number} [options.maxUnionMembers=100] - The maximum number of members to include for union types in the documentation. Default is 100.
  *
  * @returns {Plugin} A Vite plugin instance configured to generate JSX documentation.
  */
@@ -29,6 +33,10 @@ export function jsxAutoDocsVite({
   indentLevel = 2,
   cacheSize = 1000,
   debug = false,
+  maxDepth = 100,
+  maxProperties = 100,
+  maxSubProperties = 100,
+  maxUnionMembers = 100,
 }: JSXAutoDocsVite): Plugin {
   const cache: Map<string, JSXAutoDocsViteFileCache> = new Map()
 
@@ -102,6 +110,12 @@ export function jsxAutoDocsVite({
           absolutePath,
           importPackageName,
           indentLevel,
+          {
+            maxDepth,
+            maxProperties,
+            maxSubProperties,
+            maxUnionMembers,
+          },
         )
 
         setCache(absolutePath, { mtimeMs, docs })

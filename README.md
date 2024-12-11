@@ -251,14 +251,14 @@ To generate both the minimal and complete **JSX** versions of your component’s
 ```typescript
 import { generateDocs } from 'jsx-autodocs'
 
-const jsx = await generateDocs(componentPath, indentation)
+const jsx = await generateDocs(componentPath, importPackageName, indentation, options)
 ```
 
 If you only want to get the descriptor object of your component, use the **analyzeComponent** method.
 ```typescript
 import { analyzeComponent } from 'jsx-autodocs'
 
-const componentDescriptor = await analyzeComponent(componentPath)
+const componentDescriptor = await analyzeComponent(componentPath, options)
 ```
 
 If for any reason you already have the component descriptor or have built it yourself, you can use the **generateJSX** method.
@@ -287,8 +287,12 @@ const config: StorybookConfig = {
       jsxAutoDocsVite({
         importPackageName: 'my-ui-library',
         indentLevel: 2,
-        cacheSize: 1000
-        debug: false
+        cacheSize: 1000,
+        debug: false,
+        maxDepth: 100,
+        maxProperties: 100,
+        maxSubProperties: 100,
+        maxUnionMembers: 100,
       })
     )
     return config

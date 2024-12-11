@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs'
 import ts, { type __String } from 'typescript'
-import type { ComponentDescriptor } from '../types.js'
+import type { ComponentDescriptor, JSXAutoDocsOptions } from '../types.js'
 import { getTypeInfoAtPosition } from './getTypes.js'
 import { typeTreeTransformer } from './transformer.js'
 
@@ -11,6 +11,11 @@ import { typeTreeTransformer } from './transformer.js'
  * and returns a descriptor object representing the component's properties and types.
  *
  * @param {string} filePath - The path to the TSX component file to analyze.
+ * @param {JSXAutoDocsOptions} [options] - Additional options for customizing the documentation generation.
+ * @param {number} options.maxDepth - The maximum depth for nested components or structures in the documentation.
+ * @param {number} options.maxProperties - The maximum number of properties to include in the generated documentation.
+ * @param {number} options.maxSubProperties - The maximum number of sub-properties to include for nested objects.
+ * @param {number} options.maxUnionMembers - The maximum number of members to include for union types in the documentation.
  *
  * @returns {Promise<ComponentDescriptor>} A Promise that resolves with the component's descriptor object.
  *
@@ -18,6 +23,7 @@ import { typeTreeTransformer } from './transformer.js'
  */
 export async function analyzeComponent(
   filePath: string,
+  options?: JSXAutoDocsOptions,
 ): Promise<ComponentDescriptor> {
   const output: ComponentDescriptor = {
     name: '',
@@ -113,7 +119,13 @@ export async function analyzeComponent(
     return output
   }
 
-  const typeInfo = getTypeInfoAtPosition(ts, checker, sourceFile, position)
+  const typeInfo = getTypeInfoAtPosition(
+    ts,
+    checker,
+    sourceFile,
+    position,
+    options,
+  )
   const transformedTypeInfo = typeTreeTransformer(typeInfo)
 
   if (exportedFunctionNode) {

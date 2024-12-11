@@ -34,7 +34,7 @@ export type JSXAutoDocsVite = {
   indentLevel?: number
   cacheSize?: number
   debug?: boolean
-}
+} & Partial<JSXAutoDocsOptions>
 
 export type JSXAutoDocsViteFileCache = {
   mtimeMs: number

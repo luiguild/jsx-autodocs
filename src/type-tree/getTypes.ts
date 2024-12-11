@@ -53,7 +53,11 @@ const PRIMITIVE_TYPE_FLAGS =
  * @param {ts.TypeChecker} typeChecker - The TypeScript type checker used to resolve type information for symbols.
  * @param {ts.SourceFile} sourceFile - The source file being analyzed.
  * @param {number} position - The position (character offset) within the source file to analyze.
- * @param {JSXAutoDocsOptions} [options] - Optional settings for customizing the documentation generation.
+ * @param {JSXAutoDocsOptions} [options] - Additional options for customizing the documentation generation.
+ * @param {number} options.maxDepth - The maximum depth for nested components or structures in the documentation.
+ * @param {number} options.maxProperties - The maximum number of properties to include in the generated documentation.
+ * @param {number} options.maxSubProperties - The maximum number of sub-properties to include for nested objects.
+ * @param {number} options.maxUnionMembers - The maximum number of members to include for union types in the documentation.
  *
  * @returns {TypeInfo | undefined} A structured representation of the type at the specified position, or `undefined` if no valid type is found.
  *

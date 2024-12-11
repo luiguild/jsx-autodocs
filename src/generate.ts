@@ -1,7 +1,11 @@
 import { promises as fs } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { analyzeComponent } from './type-tree/analyzer.js'
-import type { ComponentDescriptor, JSXAutoDocsResult } from './types.js'
+import type {
+  ComponentDescriptor,
+  JSXAutoDocsOptions,
+  JSXAutoDocsResult,
+} from './types.js'
 
 const isDynamicKey = (key: string): boolean => /^\[.*\]$/.test(key)
 
@@ -173,11 +177,16 @@ async function getPackageName(filePath: string): Promise<string> {
  * This function reads the TSX component file at the provided path, generates
  * the associated documentation, and includes the specified package name for
  * imports in the documentation. The indentation level for the generated
- * documentation is configured according to the specified value.
+ * documentation can be configured. Additional options can be passed for further customization.
  *
  * @param {string} path - The path to the TSX component file.
  * @param {string} importPackageName - The path to your `package.json` or the name of the package used for imports in the component.
- * @param {number} [indentLevel=2] - The indentation level for the generated documentation. The default value is 2.
+ * @param {number} [indentLevel=2] - The indentation level for the generated documentation. Default is 2.
+ * @param {JSXAutoDocsOptions} [options] - Additional options for customizing the documentation generation.
+ * @param {number} options.maxDepth - The maximum depth for nested components or structures in the documentation.
+ * @param {number} options.maxProperties - The maximum number of properties to include in the generated documentation.
+ * @param {number} options.maxSubProperties - The maximum number of sub-properties to include for nested objects.
+ * @param {number} options.maxUnionMembers - The maximum number of members to include for union types in the documentation.
  *
  * @returns {Promise<JSXAutoDocsResult>} A Promise that resolves with the generated documentation for the component.
  *
@@ -187,6 +196,7 @@ export async function generateDocs(
   path: string,
   importPackageName: string,
   indentLevel: number = 2,
+  options?: JSXAutoDocsOptions,
 ): Promise<JSXAutoDocsResult> {
   if (!path) {
     return {
@@ -198,7 +208,7 @@ export async function generateDocs(
   }
 
   const packageName = await getPackageName(importPackageName)
-  const component = await analyzeComponent(path)
+  const component = await analyzeComponent(path, options)
   const jsxObject = generateJSX(component, packageName, indentLevel)
 
   return jsxObject
