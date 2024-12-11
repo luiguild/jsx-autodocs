@@ -67,6 +67,10 @@ const serializeJSXValue = (
       )
       .join(',\n')
 
+    if (!entries) {
+      return '{}'
+    }
+
     return `{\n${entries}\n${currentIndent}}`
   }
 

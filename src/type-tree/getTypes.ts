@@ -340,6 +340,7 @@ function getTypeTree(
 
       const stringIndexType = type.getStringIndexType()
       if (stringIndexType) {
+        // MEU PROBLEMA ESTÁ NESSE CASE
         properties.push({
           name: '[key: string]',
           type: goingDeep(
@@ -354,6 +355,7 @@ function getTypeTree(
 
       const numberIndexType = type.getNumberIndexType()
       if (numberIndexType) {
+        // MEU PROBLEMA ESTÁ NESSE CASE TAMBÉM, É O MESMO PROBLEMA
         properties.push({
           name: '[key: number]',
           type: goingDeep(

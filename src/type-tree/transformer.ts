@@ -52,6 +52,10 @@ function processType(
       const shouldInclude = requiredOnly ? !isOptional : true
 
       if (shouldInclude) {
+        if (prop.name.startsWith('[') && prop.name.endsWith(']')) {
+          continue
+        }
+
         result[prop.name] = getDefaultValue(prop.type, requiredOnly)
       }
     }
