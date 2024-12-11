@@ -41,6 +41,29 @@ export function jsxAutoDocsVite({
     cache.set(path, cacheEntry)
   }
 
+  function isCached(path: string, mtimeMs: number): boolean {
+    const cached = cache.get(path)
+    if (!cached) {
+      return false
+    }
+
+    if (cached.mtimeMs === mtimeMs) {
+      if (debug) {
+        console.info(`[JSXAutoDocs] Cache hit for file: ${path}`)
+      }
+
+      return true
+    }
+
+    if (debug) {
+      console.info(
+        `[JSXAutoDocs] Cache stale for file: ${path}. Updating cache.`,
+      )
+    }
+
+    return false
+  }
+
   return {
     name: 'jsx-autodocs',
     async transform(source: string, id: string) {
@@ -50,11 +73,7 @@ export function jsxAutoDocsVite({
         ?.replace(/\\/g, '/')
         .toLowerCase()
 
-      if (cleanPath?.endsWith('.stories.tsx')) {
-        return null
-      }
-
-      if (!cleanPath?.endsWith('.tsx')) {
+      if (cleanPath?.endsWith('.stories.tsx') || !cleanPath?.endsWith('.tsx')) {
         return null
       }
 
@@ -68,13 +87,7 @@ export function jsxAutoDocsVite({
         return null
       }
 
-      const cached = cache.get(absolutePath)
-
-      if (cached && cached.mtimeMs === mtimeMs) {
-        if (debug) {
-          console.info(`[JSXAutoDocs] Cache hit for the file: ${absolutePath}`)
-        }
-
+      if (isCached(absolutePath, mtimeMs)) {
         return null
       }
 
