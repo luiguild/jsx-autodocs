@@ -1,4 +1,4 @@
-import ts from 'typescript'
+import ts, { type Type } from 'typescript'
 import type {
   JSXAutoDocsOptions,
   TypeFunctionSignature,
@@ -42,8 +42,6 @@ const PRIMITIVE_TYPE_FLAGS =
   ts.TypeFlags.Never |
   ts.TypeFlags.Unknown |
   ts.TypeFlags.Any
-
-const typeNameCache = new WeakMap<ts.Type, string>()
 
 /**
  * Retrieves detailed type information for the symbol at a specific position in a TypeScript source file.
@@ -112,7 +110,7 @@ export function getTypeInfoAtPosition(
     const typeTree = getTypeTree(
       type,
       0,
-      new Set<string>(),
+      new Map<string, TypeTree>(),
       typeChecker,
       typescriptContext,
       options,
@@ -135,7 +133,7 @@ const excludedProps = new Set(['children'])
 function getTypeTree(
   type: ts.Type,
   depth: number,
-  visited: Set<string>,
+  visited: Map<string, TypeTree>,
   checker: ts.TypeChecker,
   typescript: typeof ts,
   options: JSXAutoDocsOptions,
@@ -146,7 +144,8 @@ function getTypeTree(
     propertyName?: string,
     contextKind?: string,
   ): TypeTree => {
-    const cacheKey = `${checker.typeToString(type)}:${propertyName || 'default'}:${contextKind || 'default'}`
+    const depthKey = String(depth + 1)
+    const cacheKey = `${checker.typeToString(type)}:${propertyName || 'default'}:${contextKind || 'default'}:${depthKey}`
 
     if (visited.has(cacheKey)) {
       return { kind: 'basic', typeName: checker.typeToString(type) }
@@ -162,33 +161,28 @@ function getTypeTree(
   try {
     const propertyName = context.propertyName || 'default'
     const contextKind = context.kind || 'default'
-    const cacheKey = `${checker.typeToString(type)}:${propertyName}:${contextKind}`
+    const typeName = checker.typeToString(
+      type,
+      undefined,
+      ts.TypeFormatFlags.NoTruncation,
+    )
 
-    if (visited.has(cacheKey)) {
-      return { kind: 'basic', typeName: checker.typeToString(type) }
-    }
+    const uniqueId = `${typeName}:${propertyName}:${contextKind}:${depth}`
 
-    visited.add(cacheKey)
-
-    let typeName = typeNameCache.get(type)
-
-    if (!typeName) {
-      typeName = checker.typeToString(
-        type,
-        undefined,
-        ts.TypeFormatFlags.NoTruncation,
-      )
-      typeNameCache.set(type, typeName)
-    }
-
-    const apparentType = checker.getApparentType(type)
-
-    if (depth >= options.maxDepth || isPrimitiveType(type)) {
+    if (isPrimitiveType(type)) {
       return {
         kind: 'basic',
         typeName,
       }
     }
+
+    if (visited.has(uniqueId)) {
+      return visited.get(uniqueId)!
+    }
+
+    let result: TypeTree
+
+    const apparentType = checker.getApparentType(type)
 
     if (type.isUnion()) {
       const sortedTypes = type.types
@@ -196,30 +190,26 @@ function getTypeTree(
         .sort(sortUnionTypes)
         .map((t) => goingDeep(t, propertyName, 'union'))
 
-      return {
+      result = {
         kind: 'union',
         typeName,
         types: sortedTypes,
       }
-    }
-
-    if (type.isIntersection()) {
+    } else if (type.isIntersection()) {
       const intersectionTypes = type.types.map((t) =>
         goingDeep(t, propertyName, 'intersection'),
       )
 
-      return {
+      result = {
         kind: 'intersection',
         typeName,
         types: intersectionTypes,
       }
-    }
-
-    if (checker.isArrayType(type)) {
+    } else if (checker.isArrayType(type)) {
       const arrayType = checker.getTypeArguments(type as ts.TypeReference)[0]
 
       if (!arrayType) {
-        return {
+        result = {
           kind: 'array',
           typeName,
           elementType: { kind: 'basic', typeName: 'any' },
@@ -227,34 +217,29 @@ function getTypeTree(
       }
 
       const expandedElementType = goingDeep(
-        arrayType,
+        arrayType as Type,
         `${propertyName}-element`,
         'array',
       )
 
-      return {
+      result = {
         kind: 'array',
         typeName,
         elementType: expandedElementType,
       }
-    }
-
-    if (typeName.startsWith('Promise<')) {
+    } else if (typeName.startsWith('Promise<')) {
       const typeArguments = checker.getTypeArguments(type as ts.TypeReference)
       const typeArgument = typeArguments[0]
 
-      return {
+      result = {
         kind: 'promise',
         typeName,
         type: typeArgument
           ? goingDeep(typeArgument, `${propertyName}-promise`, 'promise')
           : { kind: 'basic', typeName: 'void' },
       }
-    }
-
-    const callSignatures = apparentType.getCallSignatures()
-
-    if (callSignatures.length > 0) {
+    } else if (apparentType.getCallSignatures().length > 0) {
+      const callSignatures = apparentType.getCallSignatures()
       const signatures: TypeFunctionSignature[] = []
 
       for (let i = 0; i < callSignatures.length; i++) {
@@ -290,19 +275,17 @@ function getTypeTree(
         signatures.push({ returnType, parameters })
       }
 
-      return {
+      result = {
         kind: 'function',
         typeName,
         signatures,
       }
-    }
-
-    if (
+    } else if (
       apparentType.isClassOrInterface() ||
       (apparentType.flags & ts.TypeFlags.Object) !== 0
     ) {
       if (context.propertiesCount >= options.maxProperties) {
-        return { kind: 'basic', typeName }
+        result = { kind: 'basic', typeName }
       }
 
       const remainingProperties =
@@ -340,7 +323,6 @@ function getTypeTree(
 
       const stringIndexType = type.getStringIndexType()
       if (stringIndexType) {
-        // MEU PROBLEMA ESTÁ NESSE CASE
         properties.push({
           name: '[key: string]',
           type: goingDeep(
@@ -355,7 +337,6 @@ function getTypeTree(
 
       const numberIndexType = type.getNumberIndexType()
       if (numberIndexType) {
-        // MEU PROBLEMA ESTÁ NESSE CASE TAMBÉM, É O MESMO PROBLEMA
         properties.push({
           name: '[key: number]',
           type: goingDeep(
@@ -368,14 +349,17 @@ function getTypeTree(
         context.propertiesCount++
       }
 
-      return {
+      result = {
         kind: 'object',
         typeName,
         properties,
       }
+    } else {
+      result = { kind: 'basic', typeName }
     }
 
-    return { kind: 'basic', typeName }
+    visited.set(uniqueId, result)
+    return result
   } catch {
     return { kind: 'basic', typeName: 'unknown' }
   }

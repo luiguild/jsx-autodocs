@@ -8,21 +8,26 @@ From a simple component like this:
 type ExternalType = {
   requiredProperty: string
   optionalProperty?: string
+  requiredObjectInternal: {
+    requiredProperty: string
+    optionalProperty?: string
+  }
 }
 
 type MyComponentProps = {
+  children: ReactNode | (({ view }: { view: string }) => ReactNode)
   requiredString: string
   requiredNumber: number
   optionalString?: string
   optionalNumber?: number
-  requiredArray: ExternalType[]
-  optionalArray?: ExternalType[]
-  requiredObject: ExternalType
-  optionalObject?: ExternalType
   requiredFunction: () => void
   optionalFunction?: () => void
   requiredPromise: () => Promise<any>
   optionalPromise?: () => Promise<any>
+  requiredArray: ExternalType[]
+  optionalArray?: ExternalType[]
+  requiredObject: ExternalType
+  optionalObject?: ExternalType
 }
 
 function MyComponent(props: MyComponentProps) {
@@ -36,28 +41,56 @@ Is generated an object like this:
 ```javascript
 {
   name: 'MyComponent',
-  exportType: 'named', // or default
-  props: { // These are all the props
+  exportType: 'named', // or 'default'
+  props: { // these are all the props except 'children'
     requiredString: '',
     requiredNumber: 0,
     optionalString: '',
     optionalNumber: 0,
-    requiredArray: [ { requiredProperty: '', optionalProperty: '' } ],
-    optionalArray: [ { requiredProperty: '', optionalProperty: '' } ],
-    requiredObject: { requiredProperty: '', optionalProperty: '' },
-    optionalObject: { requiredProperty: '', optionalProperty: '' },
     requiredFunction: '() => {}',
     optionalFunction: '() => {}',
     requiredPromise: '() => {}',
-    optionalPromise: '() => {}'
+    optionalPromise: '() => {}',
+    requiredArray: [
+      {
+        requiredProperty: '',
+        optionalProperty: '',
+        requiredObjectInternal: { requiredProperty: '', optionalProperty: '' }
+      }
+    ],
+    optionalArray: [
+      {
+        requiredProperty: '',
+        optionalProperty: '',
+        requiredObjectInternal: { requiredProperty: '', optionalProperty: '' }
+      }
+    ],
+    requiredObject: {
+      requiredProperty: '',
+      optionalProperty: '',
+      requiredObjectInternal: { requiredProperty: '', optionalProperty: '' }
+    },
+    optionalObject: {
+      requiredProperty: '',
+      optionalProperty: '',
+      requiredObjectInternal: ''
+    }
   },
-  required: { // These are only the required props
+  required: { // these are only the required props except 'children'
     requiredString: '',
     requiredNumber: 0,
-    requiredArray: [ { requiredProperty: '' } ],
-    requiredObject: { requiredProperty: '' },
     requiredFunction: '() => {}',
-    requiredPromise: '() => {}'
+    requiredPromise: '() => {}',
+    requiredArray: [
+      {
+        requiredProperty: '',
+        requiredObjectInternal: { requiredProperty: '' }
+      }
+    ],
+    requiredObject: {
+      requiredProperty: '',
+      requiredObjectInternal: { requiredProperty: '' }
+    }
   }
 }
 ```
@@ -70,40 +103,65 @@ And this object is turned into this one:
   minimal: '<MyComponent\n' +
     '  requiredString=""\n' +
     '  requiredNumber={0}\n' +
-    '  requiredArray={[{\n' +
-    '      requiredProperty: ""\n' +
-    '    }]}\n' +
-    '  requiredObject={\n' +
-    '    requiredProperty: ""\n' +
-    '  }\n' +
     '  requiredFunction={() => {}}\n' +
     '  requiredPromise={() => {}}\n' +
+    '  requiredArray={[\n' +
+    '    {\n' +
+    '      requiredProperty: "",\n' +
+    '      requiredObjectInternal: {\n' +
+    '        requiredProperty: ""\n' +
+    '      }\n' +
+    '    }\n' +
+    '  ]}\n' +
+    '  requiredObject={{\n' +
+    '    requiredProperty: "",\n' +
+    '    requiredObjectInternal: {\n' +
+    '      requiredProperty: ""\n' +
+    '    }\n' +
+    '  }}\n' +
     '/>',
   complete: '<MyComponent\n' +
     '  requiredString=""\n' +
     '  requiredNumber={0}\n' +
     '  optionalString=""\n' +
     '  optionalNumber={0}\n' +
-    '  requiredArray={[{\n' +
-    '      requiredProperty: "",\n' +
-    '      optionalProperty: ""\n' +
-    '    }]}\n' +
-    '  optionalArray={[{\n' +
-    '      requiredProperty: "",\n' +
-    '      optionalProperty: ""\n' +
-    '    }]}\n' +
-    '  requiredObject={\n' +
-    '    requiredProperty: "",\n' +
-    '    optionalProperty: ""\n' +
-    '  }\n' +
-    '  optionalObject={\n' +
-    '    requiredProperty: "",\n' +
-    '    optionalProperty: ""\n' +
-    '  }\n' +
     '  requiredFunction={() => {}}\n' +
     '  optionalFunction={() => {}}\n' +
     '  requiredPromise={() => {}}\n' +
     '  optionalPromise={() => {}}\n' +
+    '  requiredArray={[\n' +
+    '    {\n' +
+    '      requiredProperty: "",\n' +
+    '      optionalProperty: "",\n' +
+    '      requiredObjectInternal: {\n' +
+    '        requiredProperty: "",\n' +
+    '        optionalProperty: ""\n' +
+    '      }\n' +
+    '    }\n' +
+    '  ]}\n' +
+    '  optionalArray={[\n' +
+    '    {\n' +
+    '      requiredProperty: "",\n' +
+    '      optionalProperty: "",\n' +
+    '      requiredObjectInternal: {\n' +
+    '        requiredProperty: "",\n' +
+    '        optionalProperty: ""\n' +
+    '      }\n' +
+    '    }\n' +
+    '  ]}\n' +
+    '  requiredObject={{\n' +
+    '    requiredProperty: "",\n' +
+    '    optionalProperty: "",\n' +
+    '    requiredObjectInternal: {\n' +
+    '      requiredProperty: "",\n' +
+    '      optionalProperty: ""\n' +
+    '    }\n' +
+    '  }}\n' +
+    '  optionalObject={{\n' +
+    '    requiredProperty: "",\n' +
+    '    optionalProperty: "",\n' +
+    '    requiredObjectInternal: ""\n' +
+    '  }}\n' +
     '/>'
 }
 ```
@@ -116,14 +174,22 @@ And then you can just represent your component in your docs with a valid JSX sig
 <MyComponent
   requiredString=""
   requiredNumber={0}
-  requiredArray={[{
-      requiredProperty: ""
-    }]}
-  requiredObject={
-    requiredProperty: ""
-  }
   requiredFunction={() => {}}
   requiredPromise={() => {}}
+  requiredArray={[
+    {
+      requiredProperty: "",
+      requiredObjectInternal: {
+        requiredProperty: ""
+      }
+    }
+  ]}
+  requiredObject={{
+    requiredProperty: "",
+    requiredObjectInternal: {
+      requiredProperty: ""
+    }
+  }}
 />
 ```
 
@@ -135,26 +201,43 @@ And then you can just represent your component in your docs with a valid JSX sig
   requiredNumber={0}
   optionalString=""
   optionalNumber={0}
-  requiredArray={[{
-      requiredProperty: "",
-      optionalProperty: ""
-    }]}
-  optionalArray={[{
-      requiredProperty: "",
-      optionalProperty: ""
-    }]}
-  requiredObject={
-    requiredProperty: "",
-    optionalProperty: ""
-  }
-  optionalObject={
-    requiredProperty: "",
-    optionalProperty: ""
-  }
   requiredFunction={() => {}}
   optionalFunction={() => {}}
   requiredPromise={() => {}}
   optionalPromise={() => {}}
+  requiredArray={[
+    {
+      requiredProperty: "",
+      optionalProperty: "",
+      requiredObjectInternal: {
+        requiredProperty: "",
+        optionalProperty: ""
+      }
+    }
+  ]}
+  optionalArray={[
+    {
+      requiredProperty: "",
+      optionalProperty: "",
+      requiredObjectInternal: {
+        requiredProperty: "",
+        optionalProperty: ""
+      }
+    }
+  ]}
+  requiredObject={{
+    requiredProperty: "",
+    optionalProperty: "",
+    requiredObjectInternal: {
+      requiredProperty: "",
+      optionalProperty: ""
+    }
+  }}
+  optionalObject={{
+    requiredProperty: "",
+    optionalProperty: "",
+    requiredObjectInternal: ""
+  }}
 />
 ```
 

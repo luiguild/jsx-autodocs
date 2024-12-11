@@ -92,25 +92,45 @@ function getDefaultValue(type: TypeTree, requiredOnly: boolean): unknown {
     case 'basic':
       return getBasicDefaultValue(type.typeName)
 
-    case 'union':
-      for (const subType of type.types) {
-        if (
+    case 'union': {
+      const nonNullTypes = type.types.filter(
+        (subType) =>
           !(
             subType.kind === 'basic' &&
             (subType.typeName === 'undefined' || subType.typeName === 'null')
-          )
-        ) {
-          return getDefaultValue(subType, requiredOnly)
-        }
+          ),
+      )
+
+      if (nonNullTypes.length === 0) {
+        return ''
       }
 
-      return ''
+      const objectSubType = nonNullTypes.find((t) => t.kind === 'object')
 
-    case 'object':
-      return processType(type, requiredOnly)
+      if (objectSubType) {
+        return getDefaultValue(objectSubType, requiredOnly)
+      }
 
-    case 'array':
+      return getDefaultValue(nonNullTypes[0] as TypeTree, requiredOnly)
+    }
+
+    case 'object': {
+      const obj = processType(type, requiredOnly)
+
+      if (
+        typeof obj === 'object' &&
+        obj !== null &&
+        Object.keys(obj).length > 0
+      ) {
+        return obj
+      }
+
+      return {}
+    }
+
+    case 'array': {
       return [getDefaultValue(type.elementType, requiredOnly)]
+    }
 
     case 'function':
       return '() => {}'
@@ -123,12 +143,14 @@ function getDefaultValue(type: TypeTree, requiredOnly: boolean): unknown {
 
     case 'intersection': {
       let intersectionResult: Record<string, unknown> = {}
+
       for (const subType of type.types) {
         const parsed = getDefaultValue(subType, requiredOnly)
         if (typeof parsed === 'object' && parsed !== null) {
           intersectionResult = { ...intersectionResult, ...parsed }
         }
       }
+
       return intersectionResult
     }
 

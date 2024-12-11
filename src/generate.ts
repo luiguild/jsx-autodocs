@@ -17,10 +17,12 @@ const isFunctionString = (value: string): boolean => {
 const serializeJSXValue = (
   value: any,
   indentLevel: number,
-  currentIndent: string = '',
+  depth: number = 0,
   isInsideObject: boolean = false,
 ): string => {
-  const nextIndent = currentIndent + ' '.repeat(indentLevel)
+  const currentIndent = ' '.repeat(indentLevel * depth)
+  const nextDepth = depth + 1
+  const nextIndent = ' '.repeat(indentLevel * nextDepth)
 
   if (typeof value === 'string') {
     if (isFunctionString(value)) {
@@ -46,11 +48,13 @@ const serializeJSXValue = (
       return isInsideObject ? '[]' : '{[]}'
     }
 
-    const items = value
-      .map((item) => serializeJSXValue(item, indentLevel, nextIndent, true))
-      .join(', ')
+    const entries = value
+      .map((item) => serializeJSXValue(item, indentLevel, nextDepth, true))
+      .join(`,\n${nextIndent}`)
 
-    return isInsideObject ? `[${items}]` : `{[${items}]}`
+    const arrayContent = `[\n${nextIndent}${entries}\n${currentIndent}]`
+
+    return isInsideObject ? arrayContent : `{${arrayContent}}`
   }
 
   if (typeof value === 'object' && value !== null) {
@@ -61,17 +65,19 @@ const serializeJSXValue = (
           `${nextIndent}${key}: ${serializeJSXValue(
             val,
             indentLevel,
-            nextIndent,
+            nextDepth,
             true,
           )}`,
       )
       .join(',\n')
 
     if (!entries) {
-      return '{}'
+      return isInsideObject ? '{}' : '{{}}'
     }
 
-    return `{\n${entries}\n${currentIndent}}`
+    const objectContent = `{\n${entries}\n${currentIndent}}`
+
+    return isInsideObject ? objectContent : `{${objectContent}}`
   }
 
   return `{${JSON.stringify(value)}}`
@@ -99,19 +105,14 @@ export function generateJSX(
 ): JSXAutoDocsResult {
   const { name, props, required } = component
 
-  const serializeProps = (
-    propsObject: Record<string, any>,
-    currentIndent: string,
-  ): string[] => {
+  const serializeProps = (propsObject: Record<string, any>): string[] => {
+    const propIndent = ' '.repeat(indentLevel)
+
     return Object.entries(propsObject)
       .filter(([key]) => !isDynamicKey(key))
       .map(([key, value]) => {
-        const serializedValue = serializeJSXValue(
-          value,
-          indentLevel,
-          currentIndent,
-        )
-        return `${currentIndent}${key}=${serializedValue}`
+        const serializedValue = serializeJSXValue(value, indentLevel, 1, false)
+        return `${propIndent}${key}=${serializedValue}`
       })
   }
 
@@ -122,13 +123,8 @@ export function generateJSX(
     return `<${name}\n${propsFormatted.join('\n')}\n/>`
   }
 
-  const minimalPropsFormatted = serializeProps(
-    required,
-    ' '.repeat(indentLevel),
-  )
-
-  const completePropsFormatted = serializeProps(props, ' '.repeat(indentLevel))
-
+  const minimalPropsFormatted = serializeProps(required)
+  const completePropsFormatted = serializeProps(props)
   const minimalJSX = buildJSX(minimalPropsFormatted)
   const completeJSX = buildJSX(completePropsFormatted)
   const exportType = component.exportType === 'named' ? `{ ${name} }` : name
