@@ -287,6 +287,7 @@ const config: StorybookConfig = {
       jsxAutoDocsVite({
         importPackageName: 'my-ui-library',
         indentLevel: 2,
+        cacheSize: 1000
         debug: false
       })
     )

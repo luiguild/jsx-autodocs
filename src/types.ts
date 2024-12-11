@@ -32,7 +32,13 @@ export type JSXAutoDocsResult = {
 export type JSXAutoDocsVite = {
   importPackageName: string
   indentLevel?: number
+  cacheSize?: number
   debug?: boolean
+}
+
+export type JSXAutoDocsViteFileCache = {
+  mtimeMs: number
+  docs: JSXAutoDocsResult
 }
 
 export type TypeTree = { typeName: string } & (
