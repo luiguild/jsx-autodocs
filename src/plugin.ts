@@ -96,7 +96,10 @@ export function jsxAutoDocsVite({
       }
 
       if (isCached(absolutePath, mtimeMs)) {
-        return null
+        return {
+          code: source,
+          map: null,
+        }
       }
 
       try {
