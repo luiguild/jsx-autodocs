@@ -1,5 +1,9 @@
 import ts, { type __String } from 'typescript'
-import type { ComponentDescriptor, JSXAutoDocsOptions } from '../types.js'
+import type {
+  Analyzer,
+  ComponentDescriptor,
+  JSXAutoDocsOptions,
+} from '../types.js'
 import { getTypeInfoAtPosition } from './getTypes.js'
 import { typeTreeTransformer } from './transformer.js'
 
@@ -28,7 +32,7 @@ export async function analyzer(
   checker: ts.TypeChecker,
   sourceFile: ts.SourceFile,
   options: JSXAutoDocsOptions,
-) {
+): Promise<Analyzer> {
   let exportedFunctionNode: ts.Node | null = null
 
   function isFunctionNode(node: ts.Node): boolean {
@@ -70,7 +74,7 @@ export async function analyzer(
   }
 
   if (!exportedFunctionNode) {
-    return output
+    return { ...output, processedTime: 0 }
   }
 
   let position: number
@@ -86,7 +90,7 @@ export async function analyzer(
   ) {
     position = exportedFunctionNode.name.getStart()
   } else {
-    return output
+    return { ...output, processedTime: 0 }
   }
 
   const typeInfo = getTypeInfoAtPosition(
@@ -104,7 +108,7 @@ export async function analyzer(
     )
 
     if (!symbol) {
-      return output
+      return { ...output, processedTime: 0 }
     }
 
     if (sourceSymbol.exports?.has(symbol.escapedName as __String)) {
@@ -114,5 +118,8 @@ export async function analyzer(
     }
   }
 
-  return transformedTypeInfo
+  return {
+    ...transformedTypeInfo,
+    processedTime: typeInfo?.processedTime || 0,
+  }
 }

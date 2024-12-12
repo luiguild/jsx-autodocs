@@ -66,10 +66,15 @@ export type TypeTree = { typeName: string } & (
   | { kind: 'function'; signatures: TypeFunctionSignature[] }
   | { kind: 'promise'; type: TypeTree }
   | { kind: 'enum'; member: string }
-  | { kind: 'basic' } // Basic types
+  | { kind: 'basic' }
 )
 
 export type TypeInfo = {
   typeTree: TypeTree
   name: string
+  processedTime: number
+}
+
+export type Analyzer = ComponentDescriptor & {
+  processedTime: number
 }

@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs'
 import ts from 'typescript'
-import type { ComponentDescriptor, JSXAutoDocsOptions } from '../types.js'
+import type { Analyzer, JSXAutoDocsOptions } from '../types.js'
 import { analyzer } from './analyzer.js'
 
 /**
@@ -17,7 +17,7 @@ import { analyzer } from './analyzer.js'
  * @param {number} options.maxUnionMembers - The maximum number of members to include for union types in the documentation.
  * @param {string} tsconfigPath - Path to the TypeScript configuration file.
  *
- * @returns {Promise<ComponentDescriptor>} A Promise that resolves with the component's descriptor object.
+ * @returns {Promise<Analyzer>} A Promise that resolves with the component's descriptor object.
  *
  * @async
  */
@@ -25,12 +25,13 @@ export async function analyzeComponentFromPath(
   filePath: string,
   options: JSXAutoDocsOptions,
   tsconfigPath?: string,
-): Promise<ComponentDescriptor> {
-  const output: ComponentDescriptor = {
+): Promise<Analyzer> {
+  const output: Analyzer = {
     name: '',
     exportType: undefined,
     props: {},
     required: {},
+    processedTime: 0,
   }
 
   try {

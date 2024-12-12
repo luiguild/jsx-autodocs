@@ -73,6 +73,8 @@ export function getTypeInfoAtPosition(
   options?: JSXAutoDocsOptions,
 ): TypeInfo | undefined {
   try {
+    const startTime = performance.now()
+
     options = {
       ...defaultOptions,
       ...options,
@@ -121,9 +123,13 @@ export function getTypeInfoAtPosition(
       context,
     )
 
+    const endTime = performance.now()
+    const processedTime = (endTime - startTime) / 1000
+
     return {
       typeTree,
       name,
+      processedTime,
     }
   } catch (error) {
     console.error(error)
