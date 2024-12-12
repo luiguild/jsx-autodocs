@@ -169,7 +169,7 @@ And this object is turned into this one:
 And then you can just represent your component in your docs with a valid JSX signature like this:
 
 ### Minimal
-(only required props)
+Only required props
 ```jsx
 <MyComponent
   requiredString=""
@@ -194,7 +194,7 @@ And then you can just represent your component in your docs with a valid JSX sig
 ```
 
 ### Complete
-(all props)
+All props
 ```jsx
 <MyComponent
   requiredString=""
@@ -251,14 +251,34 @@ To generate both the minimal and complete **JSX** versions of your component’s
 ```typescript
 import { generateDocs } from 'jsx-autodocs'
 
-const jsx = await generateDocs(componentPath, importPackageName, indentation, options)
+const jsxFromPath = await generateDocs({
+  path: './src/components/MyComponent.tsx', // only tsx files are accepted
+  packageName: 'my-ui-library',
+  indentLevel: 2,
+  maxDepth: 100
+  maxProperties: 100
+  maxSubProperties: 100
+  maxUnionMembers: 100
+})
+
+const jsxFromCode = await generateDocs({
+  source: '' // the pure typescript code extracted from your tsx component
+  program: {} // the typescript program instance
+  packageName: 'my-ui-library',
+  indentLevel: 2,
+  maxDepth: 100
+  maxProperties: 100
+  maxSubProperties: 100
+  maxUnionMembers: 100
+})
 ```
 
-If you only want to get the descriptor object of your component, use the **analyzeComponent** method.
+If you only need to retrieve the descriptor object of your component, you can do so in two ways: either by providing the file path or by using the source code directly (like the Vite Plugin).
 ```typescript
-import { analyzeComponent } from 'jsx-autodocs'
+import { analyzeComponentFromPath, analyzeComponentFromCode } from 'jsx-autodocs'
 
-const componentDescriptor = await analyzeComponent(componentPath, options)
+const componentDescriptorFromPath = await analyzeComponentFromPath(filePath, options)
+const componentDescriptorFromCode = await analyzeComponentFromCode(code, program, options)
 ```
 
 If for any reason you already have the component descriptor or have built it yourself, you can use the **generateJSX** method.
@@ -285,10 +305,11 @@ const config: StorybookConfig = {
   viteFinal: async (config) => {
     config.plugins?.push(
       jsxAutoDocsVite({
-        importPackageName: 'my-ui-library',
+        packageName: 'my-ui-library', // is the only required property
         indentLevel: 2,
         cacheSize: 1000,
         debug: false,
+        tsconfigPath: './tsconfig.json',
         maxDepth: 100,
         maxProperties: 100,
         maxSubProperties: 100,

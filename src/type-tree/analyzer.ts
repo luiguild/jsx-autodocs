@@ -1,64 +1,34 @@
-import { promises as fs } from 'node:fs'
 import ts, { type __String } from 'typescript'
 import type { ComponentDescriptor, JSXAutoDocsOptions } from '../types.js'
 import { getTypeInfoAtPosition } from './getTypes.js'
 import { typeTreeTransformer } from './transformer.js'
 
 /**
- * Analyzes a TSX component and returns its descriptor object.
+ * Analyzes a TypeScript component and extracts its type and export information.
  *
- * This function takes the path to a TSX component file, analyzes its structure,
- * and returns a descriptor object representing the component's properties and types.
+ * This function identifies and processes exported functions or variables from a TypeScript
+ * source file. It retrieves their type information, transforms the type tree, and determines
+ * their export type (named or default). The analysis integrates with the TypeScript
+ * compiler API to provide precise type checking and symbol resolution.
  *
- * @param {string} filePath - The path to the TSX component file to analyze.
- * @param {JSXAutoDocsOptions} [options] - Additional options for customizing the documentation generation.
- * @param {number} options.maxDepth - The maximum depth for nested components or structures in the documentation.
- * @param {number} options.maxProperties - The maximum number of properties to include in the generated documentation.
- * @param {number} options.maxSubProperties - The maximum number of sub-properties to include for nested objects.
- * @param {number} options.maxUnionMembers - The maximum number of members to include for union types in the documentation.
+ * @param {ComponentDescriptor} output - The initial component descriptor to populate with the analysis result.
+ * @param {ts.Symbol} sourceSymbol - The symbol representing the source file being analyzed.
+ * @param {ts.Symbol[]} exportsSymbols - The array of symbols representing the exports from the source file.
+ * @param {ts.TypeChecker} checker - The TypeScript type checker for performing type and symbol resolution.
+ * @param {ts.SourceFile} sourceFile - The source file object representing the TypeScript file to analyze.
+ * @param {JSXAutoDocsOptions} options - Configuration options for JSX auto-documentation.
  *
- * @returns {Promise<ComponentDescriptor>} A Promise that resolves with the component's descriptor object.
- *
- * @async
+ * @returns {Promise<ComponentDescriptor>} A promise that resolves to the updated component descriptor
+ * containing the extracted and transformed type information.
  */
-export async function analyzeComponent(
-  filePath: string,
-  options?: JSXAutoDocsOptions,
-): Promise<ComponentDescriptor> {
-  const output: ComponentDescriptor = {
-    name: '',
-    exportType: undefined,
-    props: {},
-    required: {},
-  }
-
-  try {
-    await fs.access(filePath)
-  } catch {
-    return output
-  }
-
-  const program = ts.createProgram([filePath], {
-    target: ts.ScriptTarget.ESNext,
-    module: ts.ModuleKind.ESNext,
-    jsx: ts.JsxEmit.React,
-    strict: true,
-  })
-
-  const checker = program.getTypeChecker()
-  const sourceFile = program.getSourceFile(filePath)
-
-  if (!sourceFile) {
-    return output
-  }
-
-  const sourceSymbol = checker.getSymbolAtLocation(sourceFile)
-  if (!sourceSymbol) {
-    return output
-  }
-
-  const exportsSymbols = checker.getExportsOfModule(sourceSymbol)
-
+export async function analyzer(
+  output: ComponentDescriptor,
+  sourceSymbol: ts.Symbol,
+  exportsSymbols: ts.Symbol[],
+  checker: ts.TypeChecker,
+  sourceFile: ts.SourceFile,
+  options: JSXAutoDocsOptions,
+) {
   let exportedFunctionNode: ts.Node | null = null
 
   function isFunctionNode(node: ts.Node): boolean {

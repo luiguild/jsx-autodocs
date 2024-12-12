@@ -1,10 +1,11 @@
 import { promises as fs } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { analyzeComponent } from './type-tree/analyzer.js'
+import { analyzeComponentFromCode } from './type-tree/analyzerFromCode.js'
+import { analyzeComponentFromPath } from './type-tree/analyzerFromPath.js'
 import type {
   ComponentDescriptor,
-  JSXAutoDocsOptions,
   JSXAutoDocsResult,
+  JSXGenerateDocs,
 } from './types.js'
 
 const isDynamicKey = (key: string): boolean => /^\[.*\]$/.test(key)
@@ -174,31 +175,55 @@ async function getPackageName(filePath: string): Promise<string> {
 /**
  * Generates documentation for a single TSX component.
  *
- * This function reads the TSX component file at the provided path, generates
- * the associated documentation, and includes the specified package name for
- * imports in the documentation. The indentation level for the generated
- * documentation can be configured. Additional options can be passed for further customization.
+ * This function generates the associated documentation based on the provided options.
+ * It supports two modes:
+ * 1. By providing the `path` to the component file.
+ * 2. By directly passing the `source` code and a `program` for analysis.
  *
- * @param {string} path - The path to the TSX component file.
- * @param {string} importPackageName - The path to your `package.json` or the name of the package used for imports in the component.
- * @param {number} [indentLevel=2] - The indentation level for the generated documentation. Default is 2.
- * @param {JSXAutoDocsOptions} [options] - Additional options for customizing the documentation generation.
- * @param {number} options.maxDepth - The maximum depth for nested components or structures in the documentation.
- * @param {number} options.maxProperties - The maximum number of properties to include in the generated documentation.
- * @param {number} options.maxSubProperties - The maximum number of sub-properties to include for nested objects.
- * @param {number} options.maxUnionMembers - The maximum number of members to include for union types in the documentation.
+ * The function also allows specifying a package name for imports in the documentation.
+ * The indentation level for the generated documentation can be customized.
+ * Additional options can be passed to control the depth and scope of the analysis.
+ *
+ * @param {JSXGenerateDocs} options - The options for generating documentation.
+ *   - When `path` is provided:
+ *     @property {string} path - The path to the TSX component file.
+ *     @property {string} tsconfigPath - Path to the TypeScript configuration file.
+ *     @property {string} packageName - The name of the package used for imports in the component.
+ *     @property {number} [indentLevel=2] - The indentation level for the generated documentation. Default is 2.
+ *     @property {number} maxDepth - The maximum depth for nested components or structures in the documentation.
+ *     @property {number} maxProperties - The maximum number of properties to include in the generated documentation.
+ *     @property {number} maxSubProperties - The maximum number of sub-properties to include for nested objects.
+ *     @property {number} maxUnionMembers - The maximum number of members to include for union types in the documentation.
+ *   - When `source` and `program` are provided:
+ *     @property {string} source - The source code of the TSX component to analyze.
+ *     @property {ts.Program} program - A TypeScript program instance used for analysis.
+ *     @property {string} packageName - The name of the package used for imports in the component.
+ *     @property {number} [indentLevel=2] - The indentation level for the generated documentation. Default is 2.
+ *     @property {number} maxDepth - The maximum depth for nested components or structures in the documentation.
+ *     @property {number} maxProperties - The maximum number of properties to include in the generated documentation.
+ *     @property {number} maxSubProperties - The maximum number of sub-properties to include for nested objects.
+ *     @property {number} maxUnionMembers - The maximum number of members to include for union types in the documentation.
  *
  * @returns {Promise<JSXAutoDocsResult>} A Promise that resolves with the generated documentation for the component.
  *
  * @async
  */
 export async function generateDocs(
-  path: string,
-  importPackageName: string,
-  indentLevel: number = 2,
-  options?: JSXAutoDocsOptions,
+  options: JSXGenerateDocs,
 ): Promise<JSXAutoDocsResult> {
-  if (!path) {
+  const {
+    packageName,
+    indentLevel = 2,
+    maxDepth = 100,
+    maxProperties = 100,
+    maxSubProperties = 100,
+    maxUnionMembers = 100,
+  } = options
+
+  const hasPath = 'path' in options
+  const hasSourceAndProgram = 'source' in options && 'program' in options
+
+  if (!(hasPath || hasSourceAndProgram)) {
     return {
       component: '',
       import: '',
@@ -207,11 +232,46 @@ export async function generateDocs(
     }
   }
 
-  const packageName = await getPackageName(importPackageName)
-  const component = await analyzeComponent(path, options)
-  const jsxObject = generateJSX(component, packageName, indentLevel)
+  const resultPackageName = await getPackageName(packageName)
+  let component: ComponentDescriptor = {
+    name: '',
+    exportType: undefined,
+    props: {},
+    required: {},
+  }
 
-  return jsxObject
+  if ('path' in options) {
+    const { path, tsconfigPath } = options
+
+    component = await analyzeComponentFromPath(
+      path,
+      {
+        maxDepth,
+        maxProperties,
+        maxSubProperties,
+        maxUnionMembers,
+      },
+      tsconfigPath,
+    )
+  } else if ('source' in options && 'program' in options) {
+    const { source, program } = options
+
+    component = await analyzeComponentFromCode(source, program, {
+      maxDepth,
+      maxProperties,
+      maxSubProperties,
+      maxUnionMembers,
+    })
+  } else {
+    return {
+      component: '',
+      import: '',
+      minimal: '',
+      complete: '',
+    }
+  }
+
+  return generateJSX(component, resultPackageName, indentLevel)
 }
 
 const getJSXAutoDocsFromWindow = (): Set<JSXAutoDocsResult> | undefined =>

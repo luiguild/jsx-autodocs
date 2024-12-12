@@ -1,6 +1,6 @@
 {
   "name": "jsx-autodocs",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "author": {
@@ -18,7 +18,8 @@
   "scripts": {
     "build": "tsc -b && cp ./README.md ./dist/README.md",
     "watch": "tsc --watch",
-    "tsx": "tsx ./examples/run.ts"
+    "tsx:basic": "tsx ./examples/basic.ts",
+    "tsx:vite": "tsx ./examples/vite.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -26,6 +27,9 @@
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",
     "@types/ts-expose-internals": "npm:ts-expose-internals@5.4.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "tsx": "^4.19.2",
     "vitest": "^2.1.8"
   },

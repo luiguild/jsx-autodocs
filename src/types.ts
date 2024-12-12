@@ -1,3 +1,5 @@
+import type ts from 'typescript'
+
 export type JSXAutoDocsOptions = {
   maxDepth: number
   maxProperties: number
@@ -22,6 +24,20 @@ export type ComponentDescriptor = {
   required: Record<string, unknown>
 }
 
+export type JSXGenerateDocs =
+  | ({
+      path: string
+      tsconfigPath?: string
+      packageName: string
+      indentLevel?: number
+    } & Partial<JSXAutoDocsOptions>)
+  | ({
+      source: string
+      program: ts.Program
+      packageName: string
+      indentLevel?: number
+    } & Partial<JSXAutoDocsOptions>)
+
 export type JSXAutoDocsResult = {
   import: string
   component: string
@@ -30,9 +46,10 @@ export type JSXAutoDocsResult = {
 }
 
 export type JSXAutoDocsVite = {
-  importPackageName: string
+  packageName: string
   indentLevel?: number
   cacheSize?: number
+  tsconfigPath?: string
   debug?: boolean
 } & Partial<JSXAutoDocsOptions>
 
